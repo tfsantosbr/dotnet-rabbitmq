@@ -1,7 +1,8 @@
 using System.Text;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
-namespace RabbitPubSubExample.Producer;
+namespace RabbitMQ.Consumer.ConsoleApp.Consumer;
 
 public class Worker : BackgroundService
 {
@@ -23,33 +24,31 @@ public class Worker : BackgroundService
 
         DeclareQueue(channel, queue);
 
-        Console.WriteLine("Appplication started, type some messages:");
+        Console.WriteLine("Appplication started, waiting for some messages...");
+
+        var consumer = new EventingBasicConsumer(channel);
+        consumer.Received += (sender, args) =>
+        {
+            var message = Encoding.UTF8.GetString(args.Body.ToArray());
+
+            Console.WriteLine($"[Message Received]: '{message}'");
+
+            channel.BasicAck(args.DeliveryTag, false);
+        };
+
+        var consumerTag = channel.BasicConsume(
+            queue: queue,
+            autoAck: false,
+            consumer: consumer);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var inputMessage = Console.ReadLine();
-
-            if (!string.IsNullOrWhiteSpace(inputMessage))
-            {
-                PublishMessage(channel, queue, inputMessage);
-
-                _logger.LogInformation($"[Message Published]: '{inputMessage}'");
-            }
+            await Task.Delay(1000, stoppingToken);
         }
 
+        channel.BasicCancel(consumerTag);
+
         await Task.CompletedTask;
-    }
-
-    private static void PublishMessage(IModel channel, string queue, string inputMessage)
-    {
-        var inputStream = Encoding.UTF8.GetBytes(inputMessage);
-
-        channel.BasicPublish(
-            exchange: "",
-            routingKey: queue,
-            basicProperties: null,
-            body: inputStream
-            );
     }
 
     private static void DeclareQueue(IModel channel, string queue)

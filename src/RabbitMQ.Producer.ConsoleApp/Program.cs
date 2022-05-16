@@ -1,4 +1,4 @@
-using RabbitPubSubExample.Producer;
+using RabbitMQ.Producer.ConsoleApp;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>

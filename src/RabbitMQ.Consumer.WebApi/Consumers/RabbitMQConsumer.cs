@@ -2,20 +2,20 @@ using System.Text;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace RabbitPubSubExample.Consumer;
+namespace RabbitMQ.Consumer.WebApi.Consumers;
 
-public class Worker : BackgroundService
+public class RabbitMQConsumer : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
+    private readonly ILogger<RabbitMQConsumer> _logger;
     private readonly IConfiguration _configuration;
 
-    public Worker(ILogger<Worker> logger, IConfiguration configuration)
+    public RabbitMQConsumer(ILogger<RabbitMQConsumer> logger, IConfiguration configuration)
     {
         _logger = logger;
         _configuration = configuration;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var connection = CreateRabbitMqConnection();
         using var channel = connection.CreateModel();
@@ -47,9 +47,9 @@ public class Worker : BackgroundService
         }
 
         channel.BasicCancel(consumerTag);
-
-        await Task.CompletedTask;
     }
+
+    // Private Methods
 
     private static void DeclareQueue(IModel channel, string queue)
     {
